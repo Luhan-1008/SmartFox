@@ -1,0 +1,51 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.swp
+*.user
+
+# Logs
+*.log
+logs/
+debug.log
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+coverage/
+*.tsbuildinfo
+
+# Test artifacts
+frontend/testresults/
+frontend/playwright-report/
+frontend/cypress/videos/
+frontend/cypress/screenshots/
+frontend/cypress/cypress-report/
+
+# Local generated / uploads
+backend/media/
+
+# Misc
+*.tmp

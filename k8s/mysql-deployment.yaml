@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  labels:
+    app: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:9.4
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_DATABASE
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_USER
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_PASSWORD
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_ROOT_PASSWORD
+          args:
+            - "--character-set-server=utf8mb4"
+            - "--collation-server=utf8mb4_unicode_ci"
+            - "--explicit_defaults_for_timestamp=1"
+            - "--lower_case_table_names=1"
+          readinessProbe:
+            tcpSocket:
+              port: 3306
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          volumeMounts:
+            - name: mysqldata
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mysqldata
+          persistentVolumeClaim:
+            claimName: mysql-pvc
