@@ -43,7 +43,7 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'experiments',
         name: 'Experiments',
-        component: () => import('@/views/Experiment/ExperimentsView.vue'),
+        component: () => import('@/views/experiment/ExperimentsView.vue'),
         meta: {
           studentOnly: true, // 仅学生可见
         }
@@ -53,7 +53,7 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'evaluation-history',
         name: 'EvaluationHistory',
-        component: () => import('@/views/Experiment/EvaluationHistoryView.vue'),
+        component: () => import('@/views/experiment/EvaluationHistoryView.vue'),
         meta: {
           studentOnly: true,
         },
@@ -69,17 +69,17 @@ const routes: Array<RouteRecordRaw> = [
       // 实验详情模块（修正为正确嵌套结构）
       {
         path: 'experiment/:id',
-        component: () => import('@/views/Experiment/ExperimentLayoutView.vue'),
+        component: () => import('@/views/experiment/ExperimentLayoutView.vue'),
         children: [
           {
             path: '',
             name: 'ExperimentDetail',
-            component: () => import('@/views/Experiment/ExperimentDetailView.vue'),
+            component: () => import('@/views/experiment/ExperimentDetailView.vue'),
           },
           {
             path: 'coding/:questionId',
             name: 'CodingTask',
-            component: () => import('@/views/Experiment/CodingEditorView.vue'),
+            component: () => import('@/views/experiment/CodingEditorView.vue'),
           },
         ],
       },
@@ -88,19 +88,19 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'discussion',
         name: 'Discussion',
-        component: () => import('@/views/discussion/DiscussionIndexView.vue'),
+        component: () => import('@/views/forum/ForumDiscussionListView.vue'),
       },
       // 讨论详情
       {
         path: 'discussion/:id',
         name: 'DiscussionDetail',
-        component: () => import('@/views/discussion/DiscussionDetailView.vue'),
+        component: () => import('@/views/forum/ForumDiscussionDetailView.vue'),
       },
       //创建题目
       {
         path: '/teacher-create',
         name: 'PublishExperiment',
-        component: () => import('@/views/Teacher/PublishExperimentView.vue'),
+        component: () => import('@/views/teacher/PublishExperimentView.vue'),
         meta: {
           teacherOnly: true, // 仅教师可见
         }
@@ -109,7 +109,7 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: '/teacher-review',
         name: 'ManageSubmissions',
-        component: () => import('@/views/Teacher/ManageSubmissionsView.vue'),
+        component: () => import('@/views/teacher/ManageSubmissionsView.vue'),
         meta: {
           teacherOnly: true, // 仅教师可见
         }
@@ -118,7 +118,7 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: '/teacher/submission-detail',
         name: 'ViewSubmissionDetail',
-        component: () => import('@/views/Teacher/ViewSubmissionDetailView.vue'),
+        component: () => import('@/views/teacher/ViewSubmissionDetailView.vue'),
         meta: {
           teacherOnly: true, // 仅教师可见
         }
