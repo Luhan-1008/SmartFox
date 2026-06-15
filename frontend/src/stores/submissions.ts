@@ -1,7 +1,12 @@
-// stores/submissions.ts
 import { defineStore } from 'pinia'
 import axios from 'axios'
 import { ref } from 'vue'
+import { useAuthStore } from './authStore'
+
+interface CodingSummary {
+  passedCount: number
+  totalCount: number
+}
 
 interface Submission {
   id: number
@@ -13,15 +18,20 @@ interface Submission {
   submittedAt: string
   passed: boolean
   answers: any[]
+  codingSummary?: CodingSummary | null
 }
 
 export const useSubmissionStore = defineStore('submissions', () => {
   const submissions = ref<Submission[]>([])
 
-  // 从后端加载提交记录
   const fetchSubmissions = async () => {
     try {
-      const res = await axios.get('http://127.0.0.1:8000/api/experiments/submissions/')
+      const authStore = useAuthStore()
+      const res = await axios.get('http://127.0.0.1:8000/api/experiments/submissions/', {
+        headers: authStore.token ? {
+          Authorization: `Bearer ${authStore.token}`,
+        } : undefined,
+      })
       submissions.value = res.data
     } catch (err) {
       console.error('获取提交记录失败', err)

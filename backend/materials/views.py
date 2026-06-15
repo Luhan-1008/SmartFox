@@ -4,6 +4,7 @@ from urllib.parse import unquote
 from urllib.parse import quote
 from django.conf import settings
 from rest_framework import viewsets, permissions, status,serializers
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -19,7 +20,14 @@ class LearningMaterialViewSet(viewsets.ModelViewSet):
     queryset = LearningMaterial.objects.all()
     parser_classes = (MultiPartParser, FormParser)
     serializer_class = LearningMaterialSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsTeacherOrReadOnly]
+
+    def initial(self, request, *args, **kwargs):
+        try:
+            super().initial(request, *args, **kwargs)
+        except PermissionDenied as exc:
+            detail = exc.detail if isinstance(exc.detail, str) else '只有教师账号可以发布或修改学习资料，请确认当前登录的是教师账号'
+            raise PermissionDenied(detail=detail)
 
     def get_queryset(self):
         user = self.request.user

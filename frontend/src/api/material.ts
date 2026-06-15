@@ -54,9 +54,10 @@ export interface LearningMaterial {
   created_at: string;
   file: string;
   file_url: string;
+  file_name?: string;
   created_by: number;
-  cover?: string;  // 可选视频封面
-  format?: string; // 文件格式扩展名
+  cover?: string;
+  format?: string;
 }
 
 export const MaterialApi = {
@@ -95,5 +96,9 @@ export const MaterialApi = {
       responseType: 'blob'
     });
     return response.data;
+  },
+
+  async incrementDownloadCount(id: number): Promise<void> {
+    await api.get(`/materials/${id}/download/`);
   }
 };

@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 from .models import User
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.password_validation import validate_password
@@ -13,6 +14,18 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
 class RegisterSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(
+        min_length=2,
+        max_length=16,
+        validators=[
+            UniqueValidator(queryset=User.objects.all(), message='该用户名已被注册')
+        ]
+    )
+    email = serializers.EmailField(
+        validators=[
+            UniqueValidator(queryset=User.objects.all(), message='该邮箱已注册过')
+        ]
+    )
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
     class Meta:
         model = User
@@ -20,6 +33,11 @@ class RegisterSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'role': {'required': True}
         }
+
+    def validate_username(self, value):
+        if len(value.strip()) < 2:
+            raise serializers.ValidationError('用户名长度至少为2个字符')
+        return value.strip()
 
     def validate(self, attrs):
         # 密码强度验证

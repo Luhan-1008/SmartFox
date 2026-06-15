@@ -146,9 +146,9 @@ WSGI_APPLICATION = 'server.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'lab_platform',
+        'NAME': 'SmartFox',
         'USER': 'root',
-        'PASSWORD': 'Zgq0412@',
+        'PASSWORD': 'root',
         'HOST': '127.0.0.1',
         'PORT': '3306',
         'OPTIONS': {

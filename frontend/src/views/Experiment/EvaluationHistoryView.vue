@@ -10,7 +10,7 @@
       <el-table-column prop="passed" label="状态">
         <template #default="{ row }">
           <el-tag :type="row.passed ? 'success' : 'danger'">
-            {{ row.passed ? '已通过' : '未通过' }}
+            {{ formatStatus(row) }}
           </el-tag>
         </template>
       </el-table-column>
@@ -23,6 +23,17 @@ import { useSubmissionStore } from '@/stores/submissions'
 import { onMounted } from 'vue'
 import { format } from 'date-fns'
 
+interface CodingSummary {
+  passedCount: number
+  totalCount: number
+}
+
+interface SubmissionRow {
+  submittedAt: string
+  passed: boolean
+  codingSummary?: CodingSummary | null
+}
+
 const submissionStore = useSubmissionStore()
 onMounted(() => {
   submissionStore.fetchSubmissions()
@@ -30,5 +41,13 @@ onMounted(() => {
 
 const formatTime = (timestamp: string) => {
   return format(new Date(timestamp), 'yyyy-MM-dd HH:mm')
+}
+
+const formatStatus = (row: SubmissionRow) => {
+  if (row.codingSummary && row.codingSummary.totalCount > 0) {
+    return `${row.passed ? '已通过' : '未通过'}（${row.codingSummary.passedCount}/${row.codingSummary.totalCount}）`
+  }
+
+  return row.passed ? '已通过' : '未通过'
 }
 </script>

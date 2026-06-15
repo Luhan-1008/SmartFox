@@ -1,4 +1,3 @@
-# experiment/serializers.py
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import (
@@ -45,25 +44,63 @@ class CodingProblemSerializer(serializers.ModelSerializer):
         fields = [
             'description', 'test_cases', 'timeout',
             'mem_limit', 'experiment', 'score', 'order' ,
-            "id"    # 移除 'id'
+            "id"
         ]
         extra_kwargs = {
-            'id': {'read_only': True}  # 明确标记id为只读
+            'id': {'read_only': True}
         }
 
 
 class TestResultSerializer(serializers.ModelSerializer):
     class Meta:
         model = TestResult
-        fields = ['id', 'test_case_input', 'expected_output','actual_output', 'is_passed']
+        fields = ['id', 'test_case_input', 'expected_output', 'actual_output', 'is_passed']
+
+
+class CodingAnswerSerializer(serializers.ModelSerializer):
+    question_type_display = serializers.SerializerMethodField()
+    prompt = serializers.SerializerMethodField()
+    correct_answer = serializers.SerializerMethodField()
+    student_answer = serializers.SerializerMethodField()
+    test_results = TestResultSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Answer
+        fields = [
+            'id', 'question_type_display', 'prompt', 'correct_answer',
+            'student_answer', 'code', 'is_passed', 'test_results'
+        ]
+
+    def get_question_type_display(self, obj):
+        model_name = obj.content_type.model_class().__name__
+        return {
+            'ChoiceProblem': '选择题',
+            'FillProblem': '填空题',
+            'CodingProblem': '编程题'
+        }.get(model_name, '未知题型')
+
+    def get_prompt(self, obj):
+        return getattr(obj.question, 'description', '')
+
+    def get_correct_answer(self, obj):
+        model_name = obj.content_type.model_class().__name__
+        if model_name in ['ChoiceProblem', 'FillProblem']:
+            return getattr(obj.question, 'correct_answer', '')
+        return None
+
+    def get_student_answer(self, obj):
+        model_name = obj.content_type.model_class().__name__
+        if model_name in ['ChoiceProblem', 'FillProblem']:
+            return obj.answer_text
+        if model_name == 'CodingProblem':
+            return obj.code
+        return None
 
 
 class AnswerSerializer(serializers.ModelSerializer):
     submission_id = serializers.IntegerField(write_only=True)
     question_type = serializers.CharField(write_only=True)
     question_id = serializers.IntegerField(write_only=True)
-
-    # 只读字段
     question_type_display = serializers.SerializerMethodField(read_only=True)
     prompt = serializers.SerializerMethodField()
     correct_answer = serializers.SerializerMethodField()
@@ -74,7 +111,7 @@ class AnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Answer
         fields = [
-            'id',"submission", "submission_id",  'question_type', 'question_type_display',
+            'id','submission', 'submission_id',  'question_type', 'question_type_display',
             'question_id', 'prompt', 'correct_answer', 'student_answer',
             'answer_text', 'code', 'file', 'is_passed', 'test_results'
         ]
@@ -115,7 +152,6 @@ class AnswerSerializer(serializers.ModelSerializer):
         )
         return answer
 
-    # 以下是只读展示字段处理
     def get_question_type_display(self, obj):
         model_name = obj.content_type.model_class().__name__
         return {
@@ -142,13 +178,11 @@ class AnswerSerializer(serializers.ModelSerializer):
         return None
 
 
-
 class CodingSubmissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = CodingSubmission
         fields = '__all__'
 
-# 原QuestionSetSerializer
 class ExperimentSerializer(serializers.ModelSerializer):
     choice_problems = ChoiceProblemSerializer(many=True, read_only=True)
     fill_problems = FillProblemSerializer(many=True, read_only=True)
@@ -159,7 +193,7 @@ class ExperimentSerializer(serializers.ModelSerializer):
     start_time = serializers.DateTimeField()
     deadline = serializers.DateTimeField()
     allow_late_submission = serializers.BooleanField(default=False)
-    late_submission_penalty = serializers.IntegerField(default=0)  # 存储百分比值
+    late_submission_penalty = serializers.IntegerField(default=0)
     description = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
@@ -189,8 +223,34 @@ class SubmissionSerializer(serializers.ModelSerializer):
     submittedAt = serializers.DateTimeField(source='submitted_at', read_only=True)
     passed = serializers.BooleanField(source='is_passed', read_only=True)
     answers = AnswerSerializer(many=True, read_only=True)
+    codingSummary = serializers.SerializerMethodField()
+
     class Meta:
         model = Submission
-        # 去掉 answers 和原来的 student、experiment 字段，替换为自定义的简化字段
-        fields = ['id', 'studentId', 'studentName', 'setId', 'setTitle', 'deadline', 'submittedAt', 'passed', 'answers']
+        fields = [
+            'id', 'studentId', 'studentName', 'setId', 'setTitle',
+            'deadline', 'submittedAt', 'passed', 'answers', 'codingSummary'
+        ]
 
+    def get_codingSummary(self, obj):
+        coding_answer = (
+            Answer.objects.filter(
+                submission=obj,
+                content_type__model='codingproblem',
+            )
+            .select_related('content_type')
+            .prefetch_related('test_results')
+            .order_by('-id')
+            .first()
+        )
+
+        if not coding_answer:
+            return None
+
+        test_results = list(coding_answer.test_results.all())
+        passed_count = sum(1 for item in test_results if item.is_passed)
+        total_count = len(test_results)
+        return {
+            'passedCount': passed_count,
+            'totalCount': total_count,
+        }

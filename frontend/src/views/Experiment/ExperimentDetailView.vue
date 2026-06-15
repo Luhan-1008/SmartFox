@@ -621,6 +621,7 @@ const submitExperiment = async () => {
     console.log('提交成功，submission_id:', submissionId);
 
     updateQuestionStatus(response.data.results);
+    await fetchExperiment()
 
     ElMessage.success(`提交成功，得分：${totalScore.value} 分`);
 

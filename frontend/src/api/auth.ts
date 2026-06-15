@@ -15,16 +15,7 @@ export const apiClient = axios.create({
   }
 });
 
-// 添加请求拦截器 - 自动注入 token
-apiClient.interceptors.request.use(config => {
-  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-  if (token && !config.headers.Authorization) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// 强制每次请求都从 localStorage/sessionStorage 获取最新 token
+// 添加请求拦截器 - 自动注入最新 token
 apiClient.interceptors.request.use(config => {
   const token = localStorage.getItem('token') || sessionStorage.getItem('token');
   if (token) {
@@ -37,7 +28,13 @@ apiClient.interceptors.request.use(config => {
 apiClient.interceptors.response.use(
   response => response, // 直接返回data
   error => {
+    const errors = error.response?.data?.errors;
+    const firstError = errors && typeof errors === 'object'
+      ? Object.values(errors)[0]
+      : null;
+    const normalizedFirstError = Array.isArray(firstError) ? firstError[0] : firstError;
     const message = error.response?.data?.message ||
+                   normalizedFirstError ||
                    error.response?.data?.detail ||
                    error.message;
     return Promise.reject(new Error(message));

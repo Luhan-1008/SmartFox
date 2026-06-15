@@ -19,6 +19,7 @@ class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         try:
@@ -29,9 +30,18 @@ class RegisterView(generics.CreateAPIView):
                 "message": "用户注册成功"
             }, status=status.HTTP_201_CREATED)
         except ValidationError as e:
+            errors = e.detail
+            first_error = next(iter(errors.values())) if isinstance(errors, dict) and errors else None
+            if isinstance(first_error, list) and first_error:
+                message = str(first_error[0])
+            elif first_error:
+                message = str(first_error)
+            else:
+                message = "注册信息校验失败"
             return Response({
                 "success": False,
-                "errors": e.detail
+                "message": message,
+                "errors": errors
             }, status=status.HTTP_400_BAD_REQUEST)
 
 class CustomTokenObtainPairView(TokenObtainPairView):

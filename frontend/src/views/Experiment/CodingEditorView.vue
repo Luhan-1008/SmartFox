@@ -99,6 +99,11 @@ interface JudgeResult {
   }>
 }
 
+interface SubmitMode {
+  source: 'editor' | 'file'
+  filename?: string
+}
+
 // 定义编程题类型
 interface CodingProblem {
   id: number
@@ -133,6 +138,7 @@ const router = useRouter()
 const experimentId = computed(() => route.params.id)
 const problemId = computed(() => route.params.questionId)
 const code = ref<string>('# 在这里编写你的代码\n')
+const submitMode = ref<SubmitMode>({ source: 'editor' })
 const submitting = ref<boolean>(false)
 const executionTime = ref<number>(0)
 const result = ref<JudgeResult | null>(null)
@@ -207,6 +213,7 @@ const debounceSave = () => {
 
 const handleCodeUpdate = (newCode: string) => {
   code.value = newCode
+  submitMode.value = { source: 'editor' }
   debounceSave()
 }
 
@@ -215,6 +222,7 @@ const handleFileUpload = (file: File) => {
   const reader = new FileReader()
   reader.onload = (e) => {
     code.value = e.target?.result as string
+    submitMode.value = { source: 'file', filename: file.name }
     debounceSave() // 上传后立即保存
     ElMessage.success('代码已从文件导入')
   }
@@ -243,9 +251,11 @@ const submitCode = async () => {
     console.log('problem.value.id:', problem.value.id)
     console.log('problemId.value:', problemId.value)
 
-    const response = await axios.post('http://127.0.0.1:8000/api/experiments/judge/', {
+    const response = await axios.post('http://127.0.0.1:8000/judge/', {
       problemId: Number(problem.value.id),
       code: code.value,
+      source: submitMode.value.source,
+      filename: submitMode.value.filename || null,
     }, {
       headers: {
         'Content-Type': 'application/json',
@@ -268,12 +278,15 @@ const submitCode = async () => {
     const err = error as AxiosError
     if (err.response) {
       const { status, data } = err.response
+      const errorMessage = data.error || data.detail || data.message || '未知错误'
       if (status === 400) {
-        ElMessage.error(`提交错误: ${data.error}`)
+        ElMessage.error(`提交错误: ${errorMessage}`)
+      } else if (status === 401) {
+        ElMessage.error('登录已失效，请重新登录后再提交代码')
       } else if (status === 404) {
-        ElMessage.error('题目不存在')
+        ElMessage.error(errorMessage || '题目不存在')
       } else {
-        ElMessage.error(`评测失败: ${data.detail || '未知错误'}`)
+        ElMessage.error(`评测失败: ${errorMessage}`)
       }
     } else {
       ElMessage.error('网络连接失败，请检查网络后重试')

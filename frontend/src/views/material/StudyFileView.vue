@@ -354,16 +354,27 @@ const submitMaterial = async () => {
       resetForm();
       isMaterialFormVisible.value = false;
     } catch (err: any) {
-      // 针对编辑操作但没有选择文件的特殊处理
-      if (materialForm.value.isEdit && !materialForm.value.files.length) {
-        ElMessage.error('请重新选择文件或点击"更新资料"保存其他修改');
+      const data = err.response?.data
+      const firstFieldError = data && typeof data === 'object'
+        ? Object.values(data).find((value) => Array.isArray(value) && value.length)
+        : null
+      const errorMsg =
+        data?.message ||
+        data?.error ||
+        data?.detail ||
+        data?.file?.[0] ||
+        data?.type?.[0] ||
+        data?.title?.[0] ||
+        (Array.isArray(firstFieldError) ? firstFieldError[0] : null) ||
+        err.message ||
+        '操作失败，请检查数据'
+
+      console.error('学习资料提交失败:', err.response?.status, data || err)
+
+      if (err.response?.status === 403) {
+        ElMessage.error(errorMsg || '只有教师账号可以发布或修改学习资料')
       } else {
-        const errorMsg = err.response?.data?.file?.[0] ||
-                        err.response?.data?.error || // 关键修改：使用后端返回的error字段
-                        err.response?.data?.detail ||
-                        err.message ||
-                        '操作失败，请检查数据';
-        ElMessage.error(errorMsg);
+        ElMessage.error(errorMsg)
       }
     }
   } catch (err: any) {

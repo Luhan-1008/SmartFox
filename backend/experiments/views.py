@@ -26,8 +26,26 @@ from django.contrib.auth import get_user_model
 from .docker_execute import DockerJudge
 from datetime import datetime
 from django.db import transaction  # 替换原来的 import transaction
+from django.db.models import Max
 
 User = get_user_model()
+
+
+def get_current_submission(experiment, user):
+    submissions = Submission.objects.filter(
+        experiment=experiment,
+        user=user,
+    ).order_by('-submitted_at', '-id')
+    current_submission = submissions.first()
+    stale_submission_ids = list(submissions.values_list('id', flat=True)[1:])
+    return current_submission, stale_submission_ids
+
+
+def touch_submission(submission):
+    current_time = timezone.now()
+    Submission.objects.filter(pk=submission.pk).update(submitted_at=current_time)
+    submission.submitted_at = current_time
+    return submission
 
 # ------------------- 基础 API 接口 -------------------
 
@@ -92,13 +110,18 @@ class CodingProblemDetailApi(APIView):
             return JsonResponse({'error': '编程题不存在'}, status=404)
 
 class CodeJudgeApi(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
         code = request.data.get('code')
         problem_id = request.data.get('problemId')
         print("接收到的 problemId:", problem_id)
         try:
+            if not code:
+                return JsonResponse({'error': '提交代码不能为空'}, status=400)
+            if not problem_id:
+                return JsonResponse({'error': '缺少题目ID'}, status=400)
+
             problem = CodingProblem.objects.get(id=problem_id)
             problem_config = {
                 "name": problem.description,
@@ -114,26 +137,90 @@ class CodeJudgeApi(APIView):
             result = judge.run_code(problem_config, code)
             print("DockerJudge.run_code 执行完成，结果:", result)
 
+            is_passed = result['passed'] == result['total']
+
             submission = CodingSubmission.objects.create(
                 coding_problem=problem,
-                user=request.user,  # 绑定当前用户
+                user=request.user,
                 code=code,
                 passed_count=result['passed'],
                 total_count=result['total'],
-                details=result['details']
+                details={
+                    'source': request.data.get('source', 'editor'),
+                    'filename': request.data.get('filename'),
+                    'judge_details': result['details'],
+                }
             )
+
+            experiment_submission, stale_submission_ids = get_current_submission(
+                problem.experiment,
+                request.user,
+            )
+
+            if experiment_submission is None:
+                experiment_submission = Submission.objects.create(
+                    experiment=problem.experiment,
+                    user=request.user,
+                    is_passed=is_passed,
+                )
+            else:
+                experiment_submission.is_passed = is_passed
+                experiment_submission.save(update_fields=['is_passed'])
+                touch_submission(experiment_submission)
+
+            if stale_submission_ids:
+                Answer.objects.filter(submission_id__in=stale_submission_ids).delete()
+                Submission.objects.filter(id__in=stale_submission_ids).delete()
+
+            coding_content_type = ContentType.objects.get_for_model(CodingProblem)
+            answer = (
+                Answer.objects.filter(
+                    submission=experiment_submission,
+                    content_type=coding_content_type,
+                    object_id=problem.id,
+                )
+                .order_by('-id')
+                .first()
+            )
+
+            if answer is None:
+                answer = Answer.objects.create(
+                    submission=experiment_submission,
+                    content_type=coding_content_type,
+                    object_id=problem.id,
+                    code=code,
+                    is_passed=is_passed,
+                )
+            else:
+                answer.code = code
+                answer.is_passed = is_passed
+                answer.save(update_fields=['code', 'is_passed'])
+                answer.test_results.all().delete()
+
+            for case in result['details']:
+                TestResult.objects.create(
+                    answer=answer,
+                    test_case_input=case.get('input', ''),
+                    expected_output=case.get('expected', ''),
+                    actual_output=case.get('actual', ''),
+                    is_passed=case.get('is_passed', False),
+                )
 
             problem.last_submission_status = {
                 "submission_id": submission.id,
                 "passed": result['passed'],
                 "total": result['total'],
+                "is_passed": is_passed,
                 "timestamp": submission.created_at.isoformat(),
             }
-            problem.save()
+            problem.save(update_fields=['last_submission_status'])
 
-            return JsonResponse({'result': result}, status=200)
+            return JsonResponse({'result': result, 'submission_id': submission.id}, status=200)
         except CodingProblem.DoesNotExist:
-            return JsonResponse({'error': '题目不存在'}, status=400)
+            return JsonResponse({'error': '题目不存在'}, status=404)
+        except Exception as e:
+            print("代码评测失败:", str(e))
+            return JsonResponse({'error': f'评测失败: {str(e)}'}, status=500)
 
 class SubmitExperimentApi(APIView):
     permission_classes = [permissions.AllowAny]
@@ -157,10 +244,21 @@ class SubmitExperimentApi(APIView):
             total_score = 0  # ✅ 初始化总分
 
             # === 创建提交记录 ===
-            submission = Submission.objects.create(
-                experiment=experiment,
-                user=user
-            )
+            submission, stale_submission_ids = get_current_submission(experiment, user)
+            if submission is None:
+                submission = Submission.objects.create(
+                    experiment=experiment,
+                    user=user
+                )
+            else:
+                submission.answers.all().delete()
+                submission.is_passed = False
+                submission.save(update_fields=['is_passed'])
+                touch_submission(submission)
+
+            if stale_submission_ids:
+                Answer.objects.filter(submission_id__in=stale_submission_ids).delete()
+                Submission.objects.filter(id__in=stale_submission_ids).delete()
 
             # === 判题并保存选择题 ===
             for choice in answers.get('choice', []):
@@ -271,7 +369,7 @@ class SubmitExperimentApi(APIView):
                 all(f['is_correct'] for f in fill_results) and
                 all(c['is_correct'] for c in coding_results)
             )
-            submission.save()
+            submission.save(update_fields=['is_passed'])
 
             return JsonResponse({
                 'success': True,
@@ -386,13 +484,14 @@ class SubmissionViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        return Submission.objects.all()
-    '''
-        user = self.request.user
-        if user.role == 'TEACHER':
-            return Submission.objects.filter(experiment__teacher=user).select_related('user', 'experiment')
-        return Submission.objects.filter(user=user).select_related('experiment')
-    '''
+        queryset = Submission.objects.select_related('user', 'experiment').prefetch_related(
+            'answers__test_results'
+        )
+        if self.request.user.is_authenticated and getattr(self.request.user, 'role', '').lower() == 'teacher':
+            return queryset.filter(experiment__teacher=self.request.user).order_by('-submitted_at', '-id')
+        if self.request.user.is_authenticated:
+            return queryset.filter(user=self.request.user).order_by('-submitted_at', '-id')
+        return queryset.order_by('-submitted_at', '-id')
     @action(detail=True, methods=['post'])
     def submit_answers(self, request, pk=None):
         submission = self.get_object()

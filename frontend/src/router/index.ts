@@ -20,6 +20,7 @@ const routes: Array<RouteRecordRaw> = [
       requiresAuth: true, // 需要认证
     },
     children: [
+
       // 通知公告
       {
         path: 'notices',
@@ -59,14 +60,7 @@ const routes: Array<RouteRecordRaw> = [
         },
       },
 
-      // 个人信息
-      {
-        path: 'profile',
-        name: 'Profile',
-        component: () => import('@/views/profile/PersonalInfoView.vue'),
-      },
-
-      // 实验详情模块（修正为正确嵌套结构）
+      // 实验详情模块
       {
         path: 'experiment/:id',
         component: () => import('@/views/experiment/ExperimentLayoutView.vue'),
@@ -98,7 +92,7 @@ const routes: Array<RouteRecordRaw> = [
       },
       //创建题目
       {
-        path: '/teacher-create',
+        path: 'teacher-create',
         name: 'PublishExperiment',
         component: () => import('@/views/teacher/PublishExperimentView.vue'),
         meta: {
@@ -107,7 +101,7 @@ const routes: Array<RouteRecordRaw> = [
       },
       //查看学生提交
       {
-        path: '/teacher-review',
+        path: 'teacher-review',
         name: 'ManageSubmissions',
         component: () => import('@/views/teacher/ManageSubmissionsView.vue'),
         meta: {
@@ -116,18 +110,26 @@ const routes: Array<RouteRecordRaw> = [
       },
       //查看学生提交详情
       {
-        path: '/teacher/submission-detail',
+        path: 'teacher/submission-detail',
         name: 'ViewSubmissionDetail',
         component: () => import('@/views/teacher/ViewSubmissionDetailView.vue'),
         meta: {
           teacherOnly: true, // 仅教师可见
         }
       },
+
       // 论坛
       {
         path: 'forum',
         name: 'Forum',
         component: () => import('@/views/forum/ForumView.vue'),
+      },      
+            
+      // 个人信息
+      {
+        path: 'profile',
+        name: 'Profile',
+        component: () => import('@/views/profile/PersonalInfoView.vue'),
       },
     ],
   },

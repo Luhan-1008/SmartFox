@@ -46,7 +46,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onActivated } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { Search } from '@element-plus/icons-vue'
@@ -110,6 +110,10 @@ const fetchSubmissions = async () => {
 // 页面加载时获取数据
 onMounted(() => {
   fetchSets()
+  fetchSubmissions()
+})
+
+onActivated(() => {
   fetchSubmissions()
 })
 

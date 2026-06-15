@@ -59,7 +59,7 @@ const validateConfirmPassword = (rule: any, value: string, callback: any) => {
 const rules = reactive<FormRules<RegisterForm>>({
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 16, message: '长度在3到16个字符', trigger: 'blur' }
+    { min: 2, max: 16, message: '长度在2到16个字符', trigger: 'blur' }
   ],
   email: [
     { required: true, message: '请输入邮箱地址', trigger: 'blur' },
@@ -157,7 +157,7 @@ onBeforeUnmount(() => {
         <el-form-item label="用户名" prop="username">
           <el-input
             v-model="registerForm.username"
-            placeholder="请输入3-16位用户名"
+            placeholder="请输入2-16位用户名"
             clearable
           />
         </el-form-item>
