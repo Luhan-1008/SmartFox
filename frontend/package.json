@@ -9,17 +9,15 @@
     "build:skip-check": "vite build",
     "preview": "vite preview",
     "test:unit": "vitest",
-    "test:e2e": "playwright test",
+    "test:e2e": "cypress run",
+    "test:gui": "cypress run",
+    "test:gui:open": "cypress open",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
     "lint:oxlint": "oxlint . --fix -D correctness --ignore-path .gitignore",
     "lint:eslint": "eslint . --fix",
     "lint": "run-s lint:*",
-    "format": "prettier --write src/",
-    "start": "vite start",  
-    "build": "vite build",
-    "test": "vite test",
-    "eject": "vite eject"
+    "format": "prettier --write src/"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
