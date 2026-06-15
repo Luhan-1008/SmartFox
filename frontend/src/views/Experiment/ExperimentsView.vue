@@ -1,4 +1,3 @@
-<!-- views/Experiments.vue -->
 <template>
   <el-card>
     <template #header>
@@ -11,7 +10,6 @@
 
       <el-table-column prop="name" label="实验名称">
         <template #default="{ row }">
-          <!-- 修改路由路径匹配嵌套路由结构 -->
           <router-link :to="{
             name: 'ExperimentDetail',
             params: { id: row.id }
@@ -64,7 +62,6 @@ function getDeadlineStatus(startStr: string | null | undefined, deadlineStr: str
   }
 }
 
-// 不同状态对应不同标签颜色
 function deadlineTagType(status: string) {
   switch (status) {
     case '未开始': return 'info'

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import type { RegisterForm } from '@/views/auth/Register.vue'
-import type { LoginForm } from '@/views/auth/Login.vue'
+import type { RegisterForm } from '@/views/auth/RegisterView.vue'
+import type { LoginForm } from '@/views/auth/LoginView.vue'
 import { authService } from '@/api/auth';
 import { ElMessage } from 'element-plus'
 type UserRole = 'student' | 'teacher'

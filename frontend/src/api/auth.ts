@@ -1,6 +1,6 @@
 import axios from 'axios';
 import type { AxiosResponse } from 'axios';
-import type { LoginForm } from '@/views/auth/Login.vue';
+import type { LoginForm } from '@/views/auth/LoginView.vue';
 
 // 配置后端基础 URL（根据你的实际后端地址修改）
 const BASE_URL = import.meta.env.VUE_APP_API_BASE_URL || 'http://127.0.0.1:8000/'; // 统一使用环境变量

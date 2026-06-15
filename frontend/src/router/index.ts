@@ -15,7 +15,7 @@ const routes: Array<RouteRecordRaw> = [
   // 主布局路由（处理所有需要侧边栏的页面）
   {
     path: '/',
-    component: () => import('@/views/index.vue'), // 主布局组件
+    component: () => import('@/views/layouts/MainLayout.vue'), // 主布局组件
     meta: {
       requiresAuth: true, // 需要认证
     },
@@ -24,7 +24,7 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'notices',
         name: 'NoticeBoard',
-        component: () => import('@/views/NoticeBoard.vue'),
+        component: () => import('@/views/notice/NoticeBoardView.vue'),
         meta: {
           title: '通知公告',
           icon: 'BellFilled',
@@ -36,14 +36,14 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'studyfile',
         name: 'StudyFile',
-        component: () => import('@/views/StudyFile.vue'),
+        component: () => import('@/views/material/StudyFileView.vue'),
       },
 
       // 实验列表
       {
         path: 'experiments',
         name: 'Experiments',
-        component: () => import('@/views/Experiments.vue'),
+        component: () => import('@/views/Experiment/ExperimentsView.vue'),
         meta: {
           studentOnly: true, // 仅学生可见
         }
@@ -53,7 +53,7 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'evaluation-history',
         name: 'EvaluationHistory',
-        component: () => import('@/views/EvaluationHistory.vue'),
+        component: () => import('@/views/Experiment/EvaluationHistoryView.vue'),
         meta: {
           studentOnly: true,
         },
@@ -63,23 +63,23 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'profile',
         name: 'Profile',
-        component: () => import('@/views/PersonalInfo.vue'),
+        component: () => import('@/views/profile/PersonalInfoView.vue'),
       },
 
       // 实验详情模块（修正为正确嵌套结构）
       {
         path: 'experiment/:id',
-        component: () => import('@/views/Experiment/ExperimentLayout.vue'),
+        component: () => import('@/views/Experiment/ExperimentLayoutView.vue'),
         children: [
           {
             path: '',
             name: 'ExperimentDetail',
-            component: () => import('@/views/Experiment/ExperimentDetail.vue'),
+            component: () => import('@/views/Experiment/ExperimentDetailView.vue'),
           },
           {
             path: 'coding/:questionId',
             name: 'CodingTask',
-            component: () => import('@/views/Experiment/CodingEditor.vue'),
+            component: () => import('@/views/Experiment/CodingEditorView.vue'),
           },
         ],
       },
@@ -88,19 +88,19 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'discussion',
         name: 'Discussion',
-        component: () => import('@/views/discussion/DiscussionIndex.vue'),
+        component: () => import('@/views/discussion/DiscussionIndexView.vue'),
       },
       // 讨论详情
       {
         path: 'discussion/:id',
         name: 'DiscussionDetail',
-        component: () => import('@/views/discussion/DiscussionDetail.vue'),
+        component: () => import('@/views/discussion/DiscussionDetailView.vue'),
       },
       //创建题目
       {
         path: '/teacher-create',
         name: 'PublishExperiment',
-        component: () => import('@/views/Teacher/PublishExperiment.vue'),
+        component: () => import('@/views/Teacher/PublishExperimentView.vue'),
         meta: {
           teacherOnly: true, // 仅教师可见
         }
@@ -109,7 +109,7 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: '/teacher-review',
         name: 'ManageSubmissions',
-        component: () => import('@/views/Teacher/ManageSubmissions.vue'),
+        component: () => import('@/views/Teacher/ManageSubmissionsView.vue'),
         meta: {
           teacherOnly: true, // 仅教师可见
         }
@@ -118,7 +118,7 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: '/teacher/submission-detail',
         name: 'ViewSubmissionDetail',
-        component: () => import('@/views/Teacher/ViewSubmissionDetail.vue'),
+        component: () => import('@/views/Teacher/ViewSubmissionDetailView.vue'),
         meta: {
           teacherOnly: true, // 仅教师可见
         }
@@ -127,7 +127,7 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'forum',
         name: 'Forum',
-        component: () => import('@/views/Forum.vue'),
+        component: () => import('@/views/forum/ForumView.vue'),
       },
     ],
   },
@@ -135,14 +135,14 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/login',
     name: 'Login',
-    component: () => import('@/views/auth/Login.vue'),
+    component: () => import('@/views/auth/LoginView.vue'),
     meta: { public: true }, // 公开访问
   },
   // 注册页面
   {
     path: '/register',
     name: 'Register',
-    component: () => import('@/views/auth/Register.vue'),
+    component: () => import('@/views/auth/RegisterView.vue'),
     meta: { public: true }, // 公开访问
   },
 ]
